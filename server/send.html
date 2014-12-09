@@ -1,0 +1,29 @@
+<html>
+  <head>
+    <title>Device</title>
+
+     <script src="/socket.io-client/socket.io.js"></script>
+  </head>
+  <body>
+
+    <div id="data"></div>
+
+    <script>
+      // Connect to the web sockket
+      var host = window.location.hostname;
+      var port = window.location.port;
+      var socket = io('http://' + host + ':' + port);
+      // Display values in HTML
+      var dataView = document.getElementById('data');
+
+      window.ondevicemotion = function (event) {
+         // Update HTML values
+         dataView.innerHTML =  event.accelerationIncludingGravity.x;
+         // Send device accelerometer data to server
+         socket.emit('accel data', {x: event.accelerationIncludingGravity.x, y: event.accelerationIncludingGravity.y, z: event.accelerationIncludingGravity.z});
+      }
+    </script>
+
+
+  </body>
+</html>
