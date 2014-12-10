@@ -3,10 +3,50 @@
     <title>Device</title>
 
      <script src="/socket.io-client/socket.io.js"></script>
+     <script src="lib/gyro.js/js/gyro.js"></script>
+
+     <style>
+     html, body {
+      margin: 0; padding: 0;
+     }
+      ul {
+        height: 100%;
+        list-style-type: none;
+        margin: 0; padding: 0;
+      }
+
+      ul li {
+        height: calc(100% / 3);
+        font-size: 84px;
+        text-align: center;
+        color: white;
+        line-height: 100%;
+      }
+
+      ul li span {
+        line-height: 400px;
+      }
+
+      ul li:nth-child(1) {
+        background: red;
+      }
+
+      ul li:nth-child(2) {
+        background: blue;
+      }
+
+      ul li:nth-child(3) {
+        background: green;
+      }
+     </style>
   </head>
   <body>
 
-    <div id="data"></div>
+    <ul>
+      <li><span id="x"></span></li>
+      <li><span id="y"></span></li>
+      <li><span id="z"></span></li>
+    </ul>
 
     <script>
       // Connect to the web sockket
@@ -14,14 +54,17 @@
       var port = window.location.port;
       var socket = io('http://' + host + ':' + port);
       // Display values in HTML
-      var dataView = document.getElementById('data');
+      var xView = document.getElementById('x'),
+        yView = document.getElementById('y'),
+        zView = document.getElementById('z');
 
-      window.ondevicemotion = function (event) {
-         // Update HTML values
-         dataView.innerHTML =  event.accelerationIncludingGravity.x;
-         // Send device accelerometer data to server
-         socket.emit('accel data', {x: event.accelerationIncludingGravity.x, y: event.accelerationIncludingGravity.y, z: event.accelerationIncludingGravity.z});
-      }
+      gyro.frequency = 50; // Poll for changes every 50ms (= about 20 times/sec)
+      gyro.startTracking(function (data) {
+        xView.innerHTML = data.alpha.toFixed(3);
+        yView.innerHTML = data.beta.toFixed(3);
+        zView.innerHTML = data.gamma.toFixed(3);
+        socket.emit('accel data', data);
+      });
     </script>
 
 

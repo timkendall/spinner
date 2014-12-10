@@ -2,20 +2,177 @@
   <head>
     <title>Spinner</title>
     <style>
-      body { margin: 0; }
+      @import url(http://fonts.googleapis.com/css?family=Droid+Sans);
+
+      body {
+        margin: 0;
+        font-family: "Droid Sans";
+        background: hsla(30,8%,63%, 0.15);
+      }
       canvas { width: 100%; height: 100%; }
+
+      .control-container {
+        position: absolute;
+        top: 30px;
+        left: 30px;
+        z-index: 999;
+      }
+
+       .control-container .btn {
+        display: inline-block;
+        cursor:pointer;
+        width: 20px;
+        height: 20px;
+        line-height: 20px;
+        text-align: center;
+        border: 1px solid #F7A04A;
+        padding: 0 8px;
+        color: #F7A04A;
+        transition: all 0.2s ease-in-out;
+       }
+
+       .control-container .btn:hover {
+        background: #F7A04A;
+        color: #F2F0EF;
+        transition: all 0.2s ease-in-out;
+       }
+
+       .control-container .btn:first-child {
+        margin-right: -4px;
+        -webkit-border-top-left-radius: 99px;
+        -webkit-border-bottom-left-radius: 99px;
+        -moz-border-radius-topleft: 99px;
+        -moz-border-radius-bottomleft: 99px;
+        border-top-left-radius: 99px;
+        border-bottom-left-radius: 99px;
+       }
+
+       .control-container .btn:last-child {
+        margin-right: -4px;
+        border-left: none;
+        -webkit-border-top-right-radius: 99px;
+        -webkit-border-bottom-right-radius: 99px;
+        -moz-border-radius-topright: 99px;
+        -moz-border-radius-bottomright: 99px;
+        border-top-right-radius: 99px;
+        border-bottom-right-radius: 99px;
+       }
+
+       .shape-container {
+        position: absolute;
+        bottom: 30px;
+        left: 0;
+        right: 0;
+        width: 100%;
+        height: 34px;
+       }
+
+       .shape-container .btn {
+        display: inline-block;
+        cursor: pointer;
+        margin: 0 6px;
+        opacity: 0.5;
+        transition: all 0.2s ease-in-out;
+       }
+
+       .shape-container .btn:hover {
+        opacity: 1;
+        transition: all 0.2s ease-in-out;
+       }
+
+       .shape-container .btn.active {
+        opacity: 1;
+       }
+
+       .shape-container .inner {
+        width: 144px;
+        margin: 0 auto;
+       }
+
+       .cube {
+        background: url(img/cube.svg) no-repeat;
+        width: 32px;
+        height: 32px;
+        background-size: 29px 32px;
+       }
+
+       .octa {
+        background: url(img/octahedron.svg) no-repeat;
+        width: 32px;
+        height: 32px;
+        background-size: 28px 32px;
+       }
+
+       .sphere {
+        background: url(img/sphere.svg) no-repeat;
+        width: 32px;
+        height: 32px;
+        background-size: 32px 32px;
+       }
+
+       .noselect {
+          -webkit-touch-callout: none;
+          -webkit-user-select: none;
+          -khtml-user-select: none;
+          -moz-user-select: none;
+          -ms-user-select: none;
+          user-select: none;
+      }
+
+      .switch-container {
+        position: absolute;
+        top: 30px;
+        right: 30px;
+        z-index: 999;
+      }
+
+      .switch-container small.label {
+        color: hsla(30,82%,63%, 1);
+        margin: 0 10px;
+      }
+
       </style>
-  </head>
-  <body>
+
     <script src="/socket.io-client/socket.io.js"></script>
     <script src="http://cdnjs.cloudflare.com/ajax/libs/three.js/r67/three.min.js"></script>
+    <script src="lib/switchery/dist/switchery.js"></script>
+
+    <link rel="stylesheet" href="lib/switchery/dist/switchery.css" />
+    <link rel="stylesheet" href="lib/font-awesome-4.2.0/css/font-awesome.min.css" />
+
+  </head>
+  <body>
+
+    <div class="control-container">
+      <div class="btn noselect" id="zoomIn">+</div>
+      <div class="btn noselect" id="zoomOut">-</div>
+    </div>
+
+    <div class="switch-container">
+      <small class="label">Auto</small>
+      <input type="checkbox" class="js-switch" data-switchery="true"  />
+      <small class="label"><i style="font-size:16px;" class="fa fa-tablet"></i></small>
+    </div>
+
+    <div class="shape-container">
+      <div class="inner">
+        <div class="btn cube active"></div>
+        <div class="btn octa"></div>
+        <div class="btn sphere"></div>
+      </div>
+    </div>
+
 
     <script>
+
+
+      /*
+       * Socket setup
+       */
+
       var host = window.location.hostname;
       var port = window.location.port;
       var socket = io('http://' + host + ':' + port);
-
-      var lastAccelData = new Date();
 
       var adjusts = {
         x: 0.02,
@@ -24,50 +181,146 @@
       }
 
       socket.on('accel data', function (data) {
-          adjusts.x = Math.abs(data.x) - Math.abs(data.x)*0.99;
-          adjusts.y = Math.abs(data.y) - Math.abs(data.y)*0.99;
-          adjusts.z = Math.abs(data.z) - Math.abs(data.z)*0.99;
-
-          lastAccelData = new Date();
+          adjusts.x = data.alpha;
+          adjusts.y = data.beta;
+          adjusts.z = data.gamma;
       });
+
+       /*
+       * Controls
+       */
+
+      var switcher = document.querySelector('.js-switch');
+      var init = new Switchery(switcher,  {
+          color          : 'none'
+        , secondaryColor : 'none'
+        , jackColor      : '#F7A04A'
+        , className      : 'switchery'
+        , disabled       : false
+        , disabledOpacity: 0.5
+        , speed          : '0.4s'
+        , size           : 'small'
+      });
+
+      var zoomInBtn = document.getElementById('zoomIn');
+      var zoomOutBtn = document.getElementById('zoomOut');
+
+      zoomInBtn.onclick = function () {
+        zoomIn();
+      }
+
+      zoomOutBtn.onclick = function () {
+        zoomOut();
+      }
+
+      function zoomIn () {
+        if (camera.position.z > 1) camera.position.z -= 0.5;
+      }
+
+      function zoomOut () {
+        if (camera.position.z < 12) camera.position.z += 0.5;
+      }
+
+      var selectedShape = 0;
+
+      var cubeBtn = document.querySelector('.cube'),
+       octaBtn = document.querySelector('.octa'),
+       sphereBtn = document.querySelector('.sphere');
+
+      cubeBtn.onclick = function () {
+        changeShape('cube');
+      }
+
+      octaBtn.onclick = function () {
+        changeShape('octa');
+      }
+
+      sphereBtn.onclick = function () {
+        changeShape('sphere');
+      }
+
+      function changeShape (shape) {
+        if (shape === 'cube') {
+          selectedShape = 0;
+          cubeBtn.classList.add('active');
+          octaBtn.classList.remove('active');
+          sphereBtn.classList.remove('active');
+
+          scene.remove(object);
+          object = new THREE.Mesh(cube, material);
+          scene.add(object);
+        } else if (shape === 'octa') {
+          selectedShape = 1;
+          cubeBtn.classList.remove('active');
+          octaBtn.classList.add('active');
+          sphereBtn.classList.remove('active');
+
+          scene.remove(object);
+          object = new THREE.Mesh(octa, material);
+          scene.add(object);
+        } else if (shape === 'sphere') {
+          selectedShape = 2;
+          cubeBtn.classList.remove('active');
+          octaBtn.classList.remove('active');
+          sphereBtn.classList.add('active');
+
+          scene.remove(object);
+          object = new THREE.Mesh(sphere, material);
+          scene.add(object);
+        }
+      }
+
+      /*
+       Rendering
+       */
 
       var scene = new THREE.Scene();
       var camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
 
-      var renderer = new THREE.WebGLRenderer();
+      var renderer = new THREE.WebGLRenderer({ alpha: true });
       renderer.setSize(window.innerWidth, window.innerHeight);
       document.body.appendChild(renderer.domElement);
 
-      var geometry = new THREE.BoxGeometry(1,1,1);
-      var material = new THREE.MeshBasicMaterial({color: 0x77BDDF, wireframe: true});
-      var cube = new THREE.Mesh(geometry, material);
-      scene.add(cube);
+      /*
+       * Setup Objects
+       */
+      var cube = new THREE.BoxGeometry(1,1,1);
+      var octa = new THREE.OctahedronGeometry( 1, 1 );
+      var sphere = new THREE.OctahedronGeometry( 1, 4 );
 
-      camera.position.z = 4;
+
+      var material = new THREE.MeshBasicMaterial({color: 0xF7A04A, wireframe: true});
+      var object = new THREE.Mesh(cube, material);
+      scene.add(object);
+
+      camera.position.z = 3;
 
       var render = function () {
         requestAnimationFrame(render);
 
-        // Revert to old state if no new accel data
-        var now = new Date();
-        var timeSinceLast = (lastAccelData.getTime() - now.getTime()) / 1000;
-        if (timeSinceLast > 3000) {
-          adjusts.x = cube.rotation.y = cube.rotation.z = 0.02;
+
+         if (switcher.checked) {
+          /*
+           * Move object according to device gyro
+           */
+          object.rotation.x = adjusts.x * (Math.PI / 180); // Convert to radians
+          object.rotation.y = adjusts.y * (Math.PI / 180);
+
+        } else {
+          /*
+           * Auto rotate object
+           */
+            object.rotation.x += 0.01; // Convert to radians
+            object.rotation.y += 0.01;
+            object.rotation.z += 0.01;
         }
 
-        cube.rotation.x += adjusts.x;
-        cube.rotation.y += adjusts.y;
-        //cube.rotation.z += adjusts.z;
-
         renderer.render(scene, camera);
-
       };
 
       render();
 
-
     </script>
-
 
 
   </body>
