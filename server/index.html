@@ -7,7 +7,7 @@
       body {
         margin: 0;
         font-family: "Droid Sans";
-        background: hsla(30,8%,63%, 0.15);
+        background: hsla(320,12%,13%,1);
       }
       canvas { width: 100%; height: 100%; }
 
@@ -136,6 +136,7 @@
     <script src="lib/socket.io-client/socket.io.js"></script>
     <script src="http://cdnjs.cloudflare.com/ajax/libs/three.js/r67/three.min.js"></script>
     <script src="lib/switchery/dist/switchery.js"></script>
+    <script src="lib/WindowResize.js"></script>
 
     <link rel="stylesheet" href="lib/switchery/dist/switchery.css" />
     <link rel="stylesheet" href="lib/font-awesome-4.2.0/css/font-awesome.min.css" />
@@ -280,6 +281,7 @@
       var renderer = new THREE.WebGLRenderer({ alpha: true });
       renderer.setSize(window.innerWidth, window.innerHeight);
       document.body.appendChild(renderer.domElement);
+      THREEx.WindowResize(renderer, camera); // Handle window resizes
 
       /*
        * Setup Objects
